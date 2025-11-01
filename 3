@@ -1,262 +1,316 @@
---[[
+-- ==============================
+-- KEY SYSTEM
+-- ==============================
+local LIFETIME_KEY = "fhuazneGISidWTTAVttBuylPpxHIlutO"
+local TEMP_KEY = "TEMP123456789"
+local tempKeyValidUntil = os.time() + 2 * 24 * 60 * 60 -- 2 days
 
-Open source
-Made by !vcsk0#1516
-Credits to me
-
-Credits to the Owner, Who Made The ESP Script
-
-]]
-
+-- ==============================
+-- GUI FOR KEY ENTRY
+-- ==============================
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
-local TeleportService = game:GetService("TeleportService")
-
--- Hitbox Settings
-getgenv().HitboxSize = 15                -- Body size
-getgenv().HeadHitboxSize = 10            -- Head size
-getgenv().HitboxTransparency = 0.7       -- Body transparency
-getgenv().HeadHitboxTransparency = 0.5   -- Head transparency
-getgenv().HitboxStatus = false
-getgenv().TeamCheck = false
-getgenv().FriendCheck = false
-getgenv().Walkspeed = 16
-getgenv().Jumppower = 50
-
--- Load UI library
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Vcsk/UI-Library/main/Source/MyUILib(Unamed).lua"))();
-local Window = Library:Create("Hitbox Expander")
-
-local HomeTab = Window:Tab("Home","rbxassetid://10888331510")
-local PlayerTab = Window:Tab("Players","rbxassetid://12296135476")
-local VisualTab = Window:Tab("Visuals","rbxassetid://12308581351")
-
--- Home Tab
-HomeTab:Section("Settings")
-
--- Body Hitbox Size (TextBox only)
-HomeTab:TextBox("Body Hitbox Size (TextBox)", function(value)
-    getgenv().HitboxSize = value
-end)
-
--- Head Hitbox Size (TextBox only)
-HomeTab:TextBox("Head Hitbox Size (TextBox)", function(value)
-    getgenv().HeadHitboxSize = value
-end)
-
--- Body Transparency
-HomeTab:TextBox("Body Hitbox Transparency", function(number)
-    getgenv().HitboxTransparency = number
-end)
-
--- Head Transparency
-HomeTab:TextBox("Head Hitbox Transparency", function(number)
-    getgenv().HeadHitboxTransparency = number
-end)
-
-HomeTab:Section("Main")
-
--- Hitbox Toggle
-HomeTab:Toggle("Status: ", function(state)
-    getgenv().HitboxStatus = state
-end)
-
--- Hitbox Loop
-RunService.RenderStepped:Connect(function()
-    if getgenv().HitboxStatus then
-        for i, v in pairs(Players:GetPlayers()) do
-            if v ~= Players.LocalPlayer then
-                pcall(function()
-                    local char = v.Character
-                    if char then
-                        local hrp = char:FindFirstChild("HumanoidRootPart")
-                        local head = char:FindFirstChild("Head")
-
-                        -- Body Hitbox
-                        if hrp then
-                            hrp.Size = Vector3.new(getgenv().HitboxSize, getgenv().HitboxSize, getgenv().HitboxSize)
-                            hrp.Transparency = getgenv().HitboxTransparency
-                            hrp.BrickColor = BrickColor.new("Really black")
-                            hrp.Material = Enum.Material.Neon
-                            hrp.CanCollide = false
-                        end
-
-                        -- Head Hitbox (match original skin color)
-                        if head then
-                            if getgenv().HeadHitboxTransparency == 0 then
-                                -- reset to normal head size
-                                head.Size = Vector3.new(2,1,1)
-                            else
-                                head.Size = Vector3.new(getgenv().HeadHitboxSize,getgenv().HeadHitboxSize,getgenv().HeadHitboxSize)
-                            end
-                            head.Transparency = getgenv().HeadHitboxTransparency
-                            head.BrickColor = head.BrickColor
-                            head.Material = Enum.Material.Neon
-                            head.CanCollide = false
-                        end
-                    end
-                end)
-            end
-        end
-    end
-end)
-
-HomeTab:Toggle("Team Check", function(state)
-    getgenv().TeamCheck = state
-end)
-
-HomeTab:Keybind("Toggle UI", Enum.KeyCode.F, function()
-    Library:ToggleUI()
-end)
-
--- Player Tab
-PlayerTab:Slider("WalkSpeed", 16,500, function(value)
-    getgenv().Walkspeed = value
-    pcall(function()
-        Players.LocalPlayer.Character.Humanoid.WalkSpeed = value
-    end)
-end)
-
-PlayerTab:Slider("JumpPower", 50,1000, function(value)
-    getgenv().Jumppower = value
-    pcall(function()
-        Players.LocalPlayer.Character.Humanoid.JumpPower = value
-    end)
-end)
-
-PlayerTab:Slider("Fov", 70,120, function(v)
-     Workspace.CurrentCamera.FieldOfView = v
-end)
-
--- Loop WalkSpeed/JumpPower
-RunService.Heartbeat:Connect(function()
-    if getgenv().loopWJ then
-        pcall(function()
-            Players.LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().Walkspeed
-            Players.LocalPlayer.Character.Humanoid.JumpPower = getgenv().Jumppower
-        end)
-    end
-    if getgenv().loopW then
-        pcall(function()
-            Players.LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().Walkspeed
-        end)
-    end
-    if getgenv().loopJ then
-        pcall(function()
-            Players.LocalPlayer.Character.Humanoid.JumpPower = getgenv().Jumppower
-        end)
-    end
-    if getgenv().Noclip then
-        local char = Players.LocalPlayer.Character
-        if char then
-            if char:FindFirstChild("Head") then char.Head.CanCollide = false end
-            if char:FindFirstChild("Torso") then char.Torso.CanCollide = false end
-        end
-    end
-end)
-
-PlayerTab:Toggle("Loop WalkSpeed/JumpPower", function(state)
-    getgenv().loopWJ = state
-end)
-
-PlayerTab:Toggle("Loop WalkSpeed", function(state)
-    getgenv().loopW = state
-end)
-
-PlayerTab:Toggle("Loop JumpPower", function(state)
-    getgenv().loopJ = state
-end)
-
-PlayerTab:Toggle("Noclip", function(s)
-    getgenv().Noclip = s
-end)
-
-PlayerTab:Toggle("Infinite Jump", function(s)
-    getgenv().InfJ = s
-end)
-
-UserInputService.JumpRequest:Connect(function()
-    if getgenv().InfJ then
-        local humanoid = Players.LocalPlayer.Character:FindFirstChildOfClass'Humanoid'
-        if humanoid then humanoid:ChangeState("Jumping") end
-    end
-end)
-
-PlayerTab:Button("Rejoin", function()
-    TeleportService:Teleport(game.PlaceId, Players.LocalPlayer)
-end)
-
--- Visual Tab
-VisualTab:Toggle("Character Highlight", function(state)
-    getgenv().enabled = state
-    getgenv().filluseteamcolor = true
-    getgenv().outlineuseteamcolor = true
-    getgenv().fillcolor = Color3.new(0,0,0)
-    getgenv().outlinecolor = Color3.new(1,1,1)
-    getgenv().filltrans = 0.5
-    getgenv().outlinetrans = 0.5
-
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/Vcsk/RobloxScripts/main/Highlight-ESP.lua"))()
-end)
-
-VisualTab:Toggle("(Everyone) ESP Name", function(state)
-    getgenv().ESPName = state
-end)
-
-VisualTab:Toggle("(Enemy Only) ESP Name (soon!)", function(state)
-    getgenv().TeamCheckkk = state
-end)
-
--- ESP Logic
-local Camera = Workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
-local function esp(p, cr)
-    local h = cr:WaitForChild("Humanoid")
-    local hrp = cr:WaitForChild("Head")
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-    local text = Drawing.new("Text")
-    text.Visible = false
-    text.Center = true
-    text.Outline = false
-    text.Font = 3
-    text.Size = 16
-    text.Color = Color3.new(1,1,1)
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 400, 0, 200)
+Frame.Position = UDim2.new(0.5, -200, 0.5, -100)
+Frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Frame.BorderSizePixel = 0
+Frame.Parent = ScreenGui
 
-    local function remove()
-        text:Remove()
+local TextLabel = Instance.new("TextLabel")
+TextLabel.Size = UDim2.new(1, 0, 0, 50)
+TextLabel.Position = UDim2.new(0, 0, 0, 0)
+TextLabel.Text = "Enter Key to activate script:"
+TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextLabel.BackgroundTransparency = 1
+TextLabel.TextScaled = true
+TextLabel.Parent = Frame
+
+local TextBox = Instance.new("TextBox")
+TextBox.Size = UDim2.new(0.8, 0, 0, 50)
+TextBox.Position = UDim2.new(0.1, 0, 0, 70)
+TextBox.PlaceholderText = "Enter your key here"
+TextBox.TextColor3 = Color3.fromRGB(0,0,0)
+TextBox.Text = ""
+TextBox.ClearTextOnFocus = false
+TextBox.Parent = Frame
+
+local SubmitButton = Instance.new("TextButton")
+SubmitButton.Size = UDim2.new(0.4, 0, 0, 40)
+SubmitButton.Position = UDim2.new(0.3, 0, 0, 140)
+SubmitButton.Text = "Submit"
+SubmitButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+SubmitButton.TextColor3 = Color3.fromRGB(255,255,255)
+SubmitButton.Parent = Frame
+
+-- ==============================
+-- FUNCTION TO VALIDATE KEY
+-- ==============================
+local function isKeyValid(key)
+    if key == LIFETIME_KEY then
+        return true
+    elseif key == TEMP_KEY and os.time() <= tempKeyValidUntil then
+        return true
+    else
+        return false
     end
+end
 
-    local con1 = cr.AncestryChanged:Connect(function(_, parent)
-        if not parent then remove() end
+-- ==============================
+-- RUN FULL HITBOX + ESP SCRIPT
+-- ==============================
+local function runScript()
+    -- Hide key GUI
+    ScreenGui:Destroy()
+
+    -- ==============================
+    -- FULL HITBOX + ESP SCRIPT
+    -- ==============================
+    local RunService = game:GetService("RunService")
+    local Players = game:GetService("Players")
+    local UserInputService = game:GetService("UserInputService")
+    local Workspace = game:GetService("Workspace")
+    local TeleportService = game:GetService("TeleportService")
+
+    -- Hitbox Settings
+    getgenv().HitboxSize = 15
+    getgenv().HeadHitboxSize = 10
+    getgenv().HitboxTransparency = 0.7
+    getgenv().HeadHitboxTransparency = 0.5
+    getgenv().HitboxStatus = false
+    getgenv().TeamCheck = false
+    getgenv().FriendCheck = false
+    getgenv().Walkspeed = 16
+    getgenv().Jumppower = 50
+
+    -- Load UI library
+    local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Vcsk/UI-Library/main/Source/MyUILib(Unamed).lua"))();
+    local Window = Library:Create("Hitbox Expander")
+
+    local HomeTab = Window:Tab("Home","rbxassetid://10888331510")
+    local PlayerTab = Window:Tab("Players","rbxassetid://12296135476")
+    local VisualTab = Window:Tab("Visuals","rbxassetid://12308581351")
+
+    -- Home Tab
+    HomeTab:Section("Settings")
+    HomeTab:TextBox("Body Hitbox Size (TextBox)", function(value)
+        getgenv().HitboxSize = value
     end)
-    local con2 = h.HealthChanged:Connect(function(v)
-        if v <= 0 then remove() end
+    HomeTab:TextBox("Head Hitbox Size (TextBox)", function(value)
+        getgenv().HeadHitboxSize = value
+    end)
+    HomeTab:TextBox("Body Hitbox Transparency", function(number)
+        getgenv().HitboxTransparency = number
+    end)
+    HomeTab:TextBox("Head Hitbox Transparency", function(number)
+        getgenv().HeadHitboxTransparency = number
     end)
 
+    HomeTab:Section("Main")
+    HomeTab:Toggle("Status: ", function(state)
+        getgenv().HitboxStatus = state
+    end)
+    HomeTab:Toggle("Team Check", function(state)
+        getgenv().TeamCheck = state
+    end)
+    HomeTab:Keybind("Toggle UI", Enum.KeyCode.F, function()
+        Library:ToggleUI()
+    end)
+
+    -- Hitbox Loop
     RunService.RenderStepped:Connect(function()
-        local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-        if onScreen and getgenv().ESPName then
-            text.Position = Vector2.new(pos.X, pos.Y - 27)
-            text.Text = p.DisplayName.." (@"..p.Name..")"
-            text.Visible = true
-        else
-            text.Visible = false
+        if getgenv().HitboxStatus then
+            for i, v in pairs(Players:GetPlayers()) do
+                if v ~= Players.LocalPlayer then
+                    pcall(function()
+                        local char = v.Character
+                        if char then
+                            local hrp = char:FindFirstChild("HumanoidRootPart")
+                            local head = char:FindFirstChild("Head")
+
+                            if hrp then
+                                hrp.Size = Vector3.new(getgenv().HitboxSize, getgenv().HitboxSize, getgenv().HitboxSize)
+                                hrp.Transparency = getgenv().HitboxTransparency
+                                hrp.BrickColor = BrickColor.new("Really black")
+                                hrp.Material = Enum.Material.Neon
+                                hrp.CanCollide = false
+                            end
+
+                            if head then
+                                if getgenv().HeadHitboxTransparency == 0 then
+                                    head.Size = Vector3.new(2,1,1)
+                                else
+                                    head.Size = Vector3.new(getgenv().HeadHitboxSize,getgenv().HeadHitboxSize,getgenv().HeadHitboxSize)
+                                end
+                                head.Transparency = getgenv().HeadHitboxTransparency
+                                head.BrickColor = head.BrickColor
+                                head.Material = Enum.Material.Neon
+                                head.CanCollide = false
+                            end
+                        end
+                    end)
+                end
+            end
         end
     end)
-end
 
-local function playerAdded(p)
-    if p.Character then esp(p,p.Character) end
-    p.CharacterAdded:Connect(function(cr)
-        esp(p,cr)
+    -- Player Tab
+    PlayerTab:Slider("WalkSpeed", 16,500, function(value)
+        getgenv().Walkspeed = value
+        pcall(function()
+            Players.LocalPlayer.Character.Humanoid.WalkSpeed = value
+        end)
     end)
+    PlayerTab:Slider("JumpPower", 50,1000, function(value)
+        getgenv().Jumppower = value
+        pcall(function()
+            Players.LocalPlayer.Character.Humanoid.JumpPower = value
+        end)
+    end)
+    PlayerTab:Slider("Fov", 70,120, function(v)
+         Workspace.CurrentCamera.FieldOfView = v
+    end)
+
+    -- Loop WalkSpeed/JumpPower
+    RunService.Heartbeat:Connect(function()
+        if getgenv().loopWJ then
+            pcall(function()
+                Players.LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().Walkspeed
+                Players.LocalPlayer.Character.Humanoid.JumpPower = getgenv().Jumppower
+            end)
+        end
+        if getgenv().loopW then
+            pcall(function()
+                Players.LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().Walkspeed
+            end)
+        end
+        if getgenv().loopJ then
+            pcall(function()
+                Players.LocalPlayer.Character.Humanoid.JumpPower = getgenv().Jumppower
+            end)
+        end
+        if getgenv().Noclip then
+            local char = Players.LocalPlayer.Character
+            if char then
+                if char:FindFirstChild("Head") then char.Head.CanCollide = false end
+                if char:FindFirstChild("Torso") then char.Torso.CanCollide = false end
+            end
+        end
+    end)
+
+    PlayerTab:Toggle("Loop WalkSpeed/JumpPower", function(state)
+        getgenv().loopWJ = state
+    end)
+    PlayerTab:Toggle("Loop WalkSpeed", function(state)
+        getgenv().loopW = state
+    end)
+    PlayerTab:Toggle("Loop JumpPower", function(state)
+        getgenv().loopJ = state
+    end)
+    PlayerTab:Toggle("Noclip", function(s)
+        getgenv().Noclip = s
+    end)
+    PlayerTab:Toggle("Infinite Jump", function(s)
+        getgenv().InfJ = s
+    end)
+
+    UserInputService.JumpRequest:Connect(function()
+        if getgenv().InfJ then
+            local humanoid = Players.LocalPlayer.Character:FindFirstChildOfClass'Humanoid'
+            if humanoid then humanoid:ChangeState("Jumping") end
+        end
+    end)
+
+    PlayerTab:Button("Rejoin", function()
+        TeleportService:Teleport(game.PlaceId, Players.LocalPlayer)
+    end)
+
+    -- Visual Tab
+    VisualTab:Toggle("Character Highlight", function(state)
+        getgenv().enabled = state
+        getgenv().filluseteamcolor = true
+        getgenv().outlineuseteamcolor = true
+        getgenv().fillcolor = Color3.new(0,0,0)
+        getgenv().outlinecolor = Color3.new(1,1,1)
+        getgenv().filltrans = 0.5
+        getgenv().outlinetrans = 0.5
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Vcsk/RobloxScripts/main/Highlight-ESP.lua"))()
+    end)
+
+    VisualTab:Toggle("(Everyone) ESP Name", function(state)
+        getgenv().ESPName = state
+    end)
+
+    VisualTab:Toggle("(Enemy Only) ESP Name (soon!)", function(state)
+        getgenv().TeamCheckkk = state
+    end)
+
+    -- ESP Logic
+    local Camera = Workspace.CurrentCamera
+    local LocalPlayer = Players.LocalPlayer
+
+    local function esp(p, cr)
+        local h = cr:WaitForChild("Humanoid")
+        local hrp = cr:WaitForChild("Head")
+
+        local text = Drawing.new("Text")
+        text.Visible = false
+        text.Center = true
+        text.Outline = false
+        text.Font = 3
+        text.Size = 16
+        text.Color = Color3.new(1,1,1)
+
+        local function remove()
+            text:Remove()
+        end
+
+        local con1 = cr.AncestryChanged:Connect(function(_, parent)
+            if not parent then remove() end
+        end)
+        local con2 = h.HealthChanged:Connect(function(v)
+            if v <= 0 then remove() end
+        end)
+
+        RunService.RenderStepped:Connect(function()
+            local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+            if onScreen and getgenv().ESPName then
+                text.Position = Vector2.new(pos.X, pos.Y - 27)
+                text.Text = p.DisplayName.." (@"..p.Name..")"
+                text.Visible = true
+            else
+                text.Visible = false
+            end
+        end)
+    end
+
+    local function playerAdded(p)
+        if p.Character then esp(p,p.Character) end
+        p.CharacterAdded:Connect(function(cr)
+            esp(p,cr)
+        end)
+    end
+
+    for i,p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then playerAdded(p) end
+    end
+
+    Players.PlayerAdded:Connect(playerAdded)
 end
 
-for i,p in pairs(Players:GetPlayers()) do
-    if p ~= LocalPlayer then playerAdded(p) end
-end
-
-Players.PlayerAdded:Connect(playerAdded)
+-- ==============================
+-- SUBMIT BUTTON EVENT
+-- ==============================
+SubmitButton.MouseButton1Click:Connect(function()
+    local inputKey = TextBox.Text
+    if isKeyValid(inputKey) then
+        runScript()
+    else
+        TextLabel.Text = "Invalid key! Try again."
+        TextLabel.TextColor3 = Color3.fromRGB(255,0,0)
+    end
+end)
