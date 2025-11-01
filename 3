@@ -121,6 +121,11 @@ local function runScript()
         Library:ToggleUI()
     end)
 
+    -- Add Rejoin Button to Home Tab
+    HomeTab:Button("Rejoin", function()
+        TeleportService:Teleport(game.PlaceId, Players.LocalPlayer)
+    end)
+
     -- Hitbox Loop
     RunService.RenderStepped:Connect(function()
         if getgenv().HitboxStatus then
