@@ -10,6 +10,10 @@ local tempKeyValidUntil = os.time() + 2 * 24 * 60 * 60 -- 2 days
 -- ==============================
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local TeleportService = game:GetService("TeleportService")
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
@@ -70,17 +74,9 @@ local function runScript()
     -- ==============================
     -- FULL HITBOX + ESP SCRIPT
     -- ==============================
-    local RunService = game:GetService("RunService")
-    local Players = game:GetService("Players")
-    local UserInputService = game:GetService("UserInputService")
-    local Workspace = game:GetService("Workspace")
-    local TeleportService = game:GetService("TeleportService")
-
     -- Hitbox Settings
     getgenv().HitboxSize = 15
-    getgenv().HeadHitboxSize = 10
     getgenv().HitboxTransparency = 0.7
-    getgenv().HeadHitboxTransparency = 0.5
     getgenv().HitboxStatus = false
     getgenv().TeamCheck = false
     getgenv().FriendCheck = false
@@ -100,14 +96,8 @@ local function runScript()
     HomeTab:TextBox("Body Hitbox Size (TextBox)", function(value)
         getgenv().HitboxSize = value
     end)
-    HomeTab:TextBox("Head Hitbox Size (TextBox)", function(value)
-        getgenv().HeadHitboxSize = value
-    end)
     HomeTab:TextBox("Body Hitbox Transparency", function(number)
         getgenv().HitboxTransparency = number
-    end)
-    HomeTab:TextBox("Head Hitbox Transparency", function(number)
-        getgenv().HeadHitboxTransparency = number
     end)
 
     HomeTab:Section("Main")
@@ -121,44 +111,72 @@ local function runScript()
         Library:ToggleUI()
     end)
 
-    -- Add Rejoin Button to Home Tab
     HomeTab:Button("Rejoin", function()
         TeleportService:Teleport(game.PlaceId, Players.LocalPlayer)
     end)
 
-    -- Hitbox Loop
+    -- ==============================
+    -- NEAREST-TO-CURSOR HOVER HITBOX
+    -- ==============================
+    local currentHighlighted = nil
+    local maxCursorDistance = 200 -- pixels for hover detection
+    local hoverDistance = 1000 -- max long-range detection
+
+    local function resetPlayer(char)
+        if char then
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                hrp.Size = Vector3.new(2,2,1)
+                hrp.Transparency = 1
+                hrp.Material = Enum.Material.Plastic
+                hrp.CanCollide = true
+                hrp.CanTouch = false
+            end
+        end
+    end
+
     RunService.RenderStepped:Connect(function()
         if getgenv().HitboxStatus then
-            for i, v in pairs(Players:GetPlayers()) do
-                if v ~= Players.LocalPlayer then
-                    pcall(function()
-                        local char = v.Character
-                        if char then
-                            local hrp = char:FindFirstChild("HumanoidRootPart")
-                            local head = char:FindFirstChild("Head")
+            local mousePos = UserInputService:GetMouseLocation()
+            local camera = Workspace.CurrentCamera
+            local closestPlayer = nil
+            local closestDistance = maxCursorDistance
 
-                            if hrp then
-                                hrp.Size = Vector3.new(getgenv().HitboxSize, getgenv().HitboxSize, getgenv().HitboxSize)
-                                hrp.Transparency = getgenv().HitboxTransparency
-                                hrp.BrickColor = BrickColor.new("Really black")
-                                hrp.Material = Enum.Material.Neon
-                                hrp.CanCollide = false
-                            end
-
-                            if head then
-                                if getgenv().HeadHitboxTransparency == 0 then
-                                    head.Size = Vector3.new(2,1,1)
-                                else
-                                    head.Size = Vector3.new(getgenv().HeadHitboxSize,getgenv().HeadHitboxSize,getgenv().HeadHitboxSize)
-                                end
-                                head.Transparency = getgenv().HeadHitboxTransparency
-                                head.BrickColor = head.BrickColor
-                                head.Material = Enum.Material.Neon
-                                head.CanCollide = false
-                            end
+            for i, player in pairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = player.Character.HumanoidRootPart
+                    local screenPos, onScreen = camera:WorldToViewportPoint(hrp.Position)
+                    if onScreen then
+                        local dist = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(mousePos.X, mousePos.Y)).Magnitude
+                        if dist < closestDistance then
+                            closestDistance = dist
+                            closestPlayer = player
                         end
-                    end)
+                    end
                 end
+            end
+
+            if currentHighlighted and currentHighlighted.Character then
+                resetPlayer(currentHighlighted.Character)
+            end
+
+            if closestPlayer and closestPlayer.Character then
+                local hrp = closestPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    hrp.Size = Vector3.new(getgenv().HitboxSize, getgenv().HitboxSize, getgenv().HitboxSize)
+                    hrp.Transparency = getgenv().HitboxTransparency
+                    hrp.Material = Enum.Material.Neon
+                    hrp.CanCollide = false
+                    hrp.CanTouch = true
+                end
+                currentHighlighted = closestPlayer
+            else
+                currentHighlighted = nil
+            end
+        else
+            if currentHighlighted and currentHighlighted.Character then
+                resetPlayer(currentHighlighted.Character)
+                currentHighlighted = nil
             end
         end
     end)
@@ -180,7 +198,6 @@ local function runScript()
          Workspace.CurrentCamera.FieldOfView = v
     end)
 
-    -- Loop WalkSpeed/JumpPower
     RunService.Heartbeat:Connect(function()
         if getgenv().loopWJ then
             pcall(function()
@@ -274,48 +291,43 @@ local function runScript()
             text:Remove()
         end
 
-        local con1 = cr.AncestryChanged:Connect(function(_, parent)
-            if not parent then remove() end
-        end)
-        local con2 = h.HealthChanged:Connect(function(v)
-            if v <= 0 then remove() end
-        end)
-
         RunService.RenderStepped:Connect(function()
-            local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-            if onScreen and getgenv().ESPName then
-                text.Position = Vector2.new(pos.X, pos.Y - 27)
-                text.Text = p.DisplayName.." (@"..p.Name..")"
-                text.Visible = true
+            if getgenv().ESPName then
+                local pos, vis = Camera:WorldToViewportPoint(hrp.Position)
+                if vis then
+                    text.Position = Vector2.new(pos.X, pos.Y)
+                    text.Text = p.Name
+                    text.Visible = true
+                else
+                    text.Visible = false
+                end
             else
                 text.Visible = false
             end
         end)
     end
 
-    local function playerAdded(p)
-        if p.Character then esp(p,p.Character) end
-        p.CharacterAdded:Connect(function(cr)
-            esp(p,cr)
+    for i,v in pairs(Players:GetPlayers()) do
+        if v ~= LocalPlayer then
+            if v.Character then
+                esp(v,v.Character)
+            end
+        end
+    end
+    Players.PlayerAdded:Connect(function(v)
+        v.CharacterAdded:Connect(function(c)
+            esp(v,c)
         end)
-    end
-
-    for i,p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then playerAdded(p) end
-    end
-
-    Players.PlayerAdded:Connect(playerAdded)
+    end)
 end
 
 -- ==============================
--- SUBMIT BUTTON EVENT
+-- KEY SUBMIT BUTTON
 -- ==============================
 SubmitButton.MouseButton1Click:Connect(function()
-    local inputKey = TextBox.Text
-    if isKeyValid(inputKey) then
+    if isKeyValid(TextBox.Text) then
         runScript()
     else
-        TextLabel.Text = "Invalid key! Try again."
-        TextLabel.TextColor3 = Color3.fromRGB(255,0,0)
+        TextLabel.Text = "Invalid Key! Try again."
     end
 end)
